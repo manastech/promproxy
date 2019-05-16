@@ -1,0 +1,16 @@
+version: '2'
+
+volumes:
+  gopkg:
+
+services:
+  app:
+    image: golang:1.12
+    command: go run promproxy
+    working_dir: /usr/src/promproxy
+    volumes:
+      - ./:/usr/src/promproxy
+      - gopkg:/go/pkg
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 9999
