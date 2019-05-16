@@ -55,35 +55,52 @@ func (r dockerResolver) Resolve(ctx context.Context, target string) ([]Result, e
 	var results []Result
 
 	for _, container := range containers {
-
-		containerHost := strings.Join([]string{
-			container.Labels["com.docker.compose.service"],
-			container.Labels["com.docker.compose.project"],
-		}, ".")
-		if containerHost != target {
-			continue
+		ip, err := r.matchContainer(ctx, target, container)
+		if err != nil {
+			return nil, err
 		}
 
-		var ip string
-
-		if net, ok := container.NetworkSettings.Networks["promproxy"]; ok {
-			ip = net.IPAddress
-		} else {
-			if err = r.client.NetworkConnect(ctx, "promproxy", container.ID, nil); err != nil {
-				return nil, err
-			}
-
-			container, err := r.client.ContainerInspect(ctx, container.ID)
-			if err != nil {
-				return nil, err
-			}
-
-			ip = container.NetworkSettings.Networks["promproxy"].IPAddress
+		if ip != "" {
+			label := createLabelPair("container", container.Names[0])
+			results = append(results, Result{IP: ip, Label: label})
 		}
-
-		label := createLabelPair("container", container.Names[0])
-		results = append(results, Result{IP: ip, Label: label})
 	}
 
 	return results, nil
+}
+
+func (r dockerResolver) matchContainer(ctx context.Context, target string, container types.Container) (string, error) {
+	composeHost := strings.Join([]string{
+		container.Labels["com.docker.compose.service"],
+		container.Labels["com.docker.compose.project"],
+	}, ".")
+
+	if composeHost == target {
+		if net, ok := container.NetworkSettings.Networks["promproxy"]; ok {
+			return net.IPAddress, nil
+		}
+
+		if err := r.client.NetworkConnect(ctx, "promproxy", container.ID, nil); err != nil {
+			return "", err
+		}
+
+		container, err := r.client.ContainerInspect(ctx, container.ID)
+		if err != nil {
+			return "", err
+		}
+
+		return container.NetworkSettings.Networks["promproxy"].IPAddress, nil
+	}
+
+	rancherStackService := container.Labels["io.rancher.stack_service.name"]
+	if rancherStackService != "" {
+		stackAndService := strings.Split(rancherStackService, "/")
+		rancherHost := strings.Join([]string{stackAndService[1], stackAndService[0]}, ".")
+		if rancherHost == target {
+			ipParts := strings.Split(container.Labels["io.rancher.container.ip"], "/")
+			return ipParts[0], nil
+		}
+	}
+
+	return "", nil
 }
