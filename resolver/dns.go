@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"context"
 	"net"
 
 	dto "github.com/prometheus/client_model/go"
@@ -14,7 +15,7 @@ func NewDNSResolver() Resolver {
 	return dnsResolver{}
 }
 
-func (r dnsResolver) Resolve(target string) ([]Result, error) {
+func (r dnsResolver) Resolve(ctx context.Context, target string) ([]Result, error) {
 	addrs, err := net.LookupHost(target)
 	if err != nil {
 		return nil, err

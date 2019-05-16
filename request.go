@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"net/url"
+	"promproxy/resolver"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,10 +21,11 @@ type request struct {
 	host      string
 	port      int
 	path      string
+	resolver  resolver.Resolver
 	basicAuth *basicAuth
 }
 
-func parseRequest(url *url.URL) (*request, error) {
+func parseRequest(ctx context.Context, url *url.URL) (*request, error) {
 	parts := strings.Split(url.Path, "/")
 	matches := targetRegex.FindStringSubmatch(parts[1])
 
@@ -48,6 +51,22 @@ func parseRequest(url *url.URL) (*request, error) {
 		userAndPwd := strings.SplitN(basicAuthParam, ":", 2)
 		// TODO: check array bounds
 		request.basicAuth = &basicAuth{username: userAndPwd[0], password: userAndPwd[1]}
+	}
+
+	// var r resolver.Resolver
+	switch url.Query().Get("lookup") {
+	case "dns":
+		request.resolver = resolver.NewDNSResolver()
+
+	case "docker":
+		r, err := resolver.NewDockerResolver(ctx)
+		if err != nil {
+			return nil, err
+		}
+		request.resolver = r
+
+	default:
+		request.resolver = resolver.NewDNSResolver()
 	}
 
 	return &request, nil

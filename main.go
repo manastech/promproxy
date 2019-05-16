@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"promproxy/resolver"
 
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 )
 
 func main() {
+	log.Print("Starting promproxy")
 	http.HandleFunc("/", reqHandler)
 	log.Fatal(http.ListenAndServe(":9999", nil))
 }
@@ -18,14 +18,15 @@ func main() {
 func reqHandler(w http.ResponseWriter, inReq *http.Request) {
 	var err error
 
-	request, err := parseRequest(inReq.URL)
+	request, err := parseRequest(inReq.Context(), inReq.URL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	resolver := resolver.NewDNSResolver()
-	results, err := resolver.Resolve(request.host)
+	log.Print(inReq.URL)
+
+	results, err := request.resolver.Resolve(inReq.Context(), request.host)
 	if err != nil || len(results) == 0 {
 		http.NotFound(w, inReq)
 		return
