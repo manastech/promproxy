@@ -41,6 +41,13 @@ func reqHandler(w http.ResponseWriter, inReq *http.Request) {
 			outReq.SetBasicAuth(request.basicAuth.username, request.basicAuth.password)
 		}
 
+		// Set headers
+		for key, values := range request.headers {
+			for _, value := range values {
+				outReq.Header.Add(key, value)
+			}
+		}
+
 		outRes, err := http.DefaultClient.Do(outReq)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

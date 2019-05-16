@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"net/http"
 	"net/url"
 	"promproxy/resolver"
 	"regexp"
@@ -23,6 +24,7 @@ type request struct {
 	path      string
 	resolver  resolver.Resolver
 	basicAuth *basicAuth
+	headers   http.Header
 }
 
 func parseRequest(ctx context.Context, url *url.URL) (*request, error) {
@@ -34,9 +36,10 @@ func parseRequest(ctx context.Context, url *url.URL) (*request, error) {
 	}
 
 	request := request{
-		host: matches[1],
-		port: 80,
-		path: parts[2],
+		host:    matches[1],
+		port:    80,
+		path:    parts[2],
+		headers: http.Header{},
 	}
 
 	if matches[2] != "" {
@@ -51,6 +54,13 @@ func parseRequest(ctx context.Context, url *url.URL) (*request, error) {
 		userAndPwd := strings.SplitN(basicAuthParam, ":", 2)
 		// TODO: check array bounds
 		request.basicAuth = &basicAuth{username: userAndPwd[0], password: userAndPwd[1]}
+	}
+
+	for _, reqHeader := range url.Query()["header"] {
+		keyAndValue := strings.SplitN(reqHeader, ":", 2)
+		if len(keyAndValue) == 2 {
+			request.headers.Add(keyAndValue[0], keyAndValue[1])
+		}
 	}
 
 	// var r resolver.Resolver
