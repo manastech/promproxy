@@ -3,8 +3,6 @@ package resolver
 import (
 	"context"
 	"net"
-
-	dto "github.com/prometheus/client_model/go"
 )
 
 type dnsResolver struct {
@@ -27,11 +25,4 @@ func (r dnsResolver) Resolve(ctx context.Context, target string) ([]Result, erro
 	}
 
 	return results, nil
-}
-
-func createLabelPair(name string, value string) *dto.LabelPair {
-	return &dto.LabelPair{
-		Name:  &name,
-		Value: &value,
-	}
 }
