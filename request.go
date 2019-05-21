@@ -63,20 +63,24 @@ func parseRequest(ctx context.Context, url *url.URL) (*request, error) {
 		}
 	}
 
-	// var r resolver.Resolver
-	switch url.Query().Get("lookup") {
-	case "dns":
-		request.resolver = resolver.NewDNSResolver()
+	if request.host == "localhost" {
+		request.resolver = resolver.NewLocalhostResolver()
+	} else {
+		// var r resolver.Resolver
+		switch url.Query().Get("lookup") {
+		case "dns":
+			request.resolver = resolver.NewDNSResolver()
 
-	case "docker":
-		r, err := resolver.NewDockerResolver(ctx)
-		if err != nil {
-			return nil, err
+		case "docker":
+			r, err := resolver.NewDockerResolver(ctx)
+			if err != nil {
+				return nil, err
+			}
+			request.resolver = r
+
+		default:
+			request.resolver = resolver.NewDNSResolver()
 		}
-		request.resolver = r
-
-	default:
-		request.resolver = resolver.NewDNSResolver()
 	}
 
 	return &request, nil
