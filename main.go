@@ -4,12 +4,20 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"promproxy/util"
 
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 )
 
+var envLabel *dto.LabelPair
+
 func main() {
+	if env, ok := os.LookupEnv("PROMPROXY_ENV_LABEL"); ok {
+		envLabel = util.CreateLabelPair("env", env)
+	}
+
 	log.Print("Starting promproxy")
 	http.HandleFunc("/", reqHandler)
 	log.Fatal(http.ListenAndServe(":9999", nil))
@@ -73,6 +81,10 @@ func reqHandler(w http.ResponseWriter, inReq *http.Request) {
 
 			for _, metric := range sample.Metric {
 				metric.Label = append(metric.Label, result.Label)
+
+				if envLabel != nil {
+					metric.Label = append(metric.Label, envLabel)
+				}
 			}
 
 			encoder.Encode(&sample)
