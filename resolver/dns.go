@@ -3,6 +3,7 @@ package resolver
 import (
 	"context"
 	"net"
+	"promproxy/util"
 )
 
 type dnsResolver struct {
@@ -21,7 +22,7 @@ func (r dnsResolver) Resolve(ctx context.Context, target string) ([]Result, erro
 
 	var results = make([]Result, 0, len(addrs))
 	for _, addr := range addrs {
-		results = append(results, Result{IP: addr, Label: createLabelPair("ip", addr)})
+		results = append(results, Result{IP: addr, Label: util.CreateLabelPair("ip", addr)})
 	}
 
 	return results, nil

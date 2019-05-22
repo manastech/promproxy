@@ -3,6 +3,7 @@ package resolver
 import (
 	"context"
 	"io/ioutil"
+	"promproxy/util"
 	"regexp"
 	"strings"
 
@@ -61,7 +62,7 @@ func (r dockerResolver) Resolve(ctx context.Context, target string) ([]Result, e
 		}
 
 		if ip != "" {
-			label := createLabelPair("container", container.Names[0])
+			label := util.CreateLabelPair("container", container.Names[0])
 			results = append(results, Result{IP: ip, Label: label})
 		}
 	}

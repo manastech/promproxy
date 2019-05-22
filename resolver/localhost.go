@@ -3,6 +3,7 @@ package resolver
 import (
 	"context"
 	"os"
+	"promproxy/util"
 )
 
 type localhostResolver struct {
@@ -19,7 +20,7 @@ func (localhostResolver) Resolve(ctx context.Context, target string) ([]Result, 
 		return nil, err
 	}
 
-	label := createLabelPair("hostname", hostname)
+	label := util.CreateLabelPair("hostname", hostname)
 	result := Result{IP: "127.0.0.1", Label: label}
 	return []Result{result}, nil
 }

@@ -16,10 +16,3 @@ type Result struct {
 type Resolver interface {
 	Resolve(ctx context.Context, target string) ([]Result, error)
 }
-
-func createLabelPair(name string, value string) *dto.LabelPair {
-	return &dto.LabelPair{
-		Name:  &name,
-		Value: &value,
-	}
-}
