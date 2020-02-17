@@ -14,11 +14,13 @@ import (
 var envLabel *dto.LabelPair
 
 func main() {
+	log.Print("Starting promproxy")
+
 	if env, ok := os.LookupEnv("PROMPROXY_ENV_LABEL"); ok {
 		envLabel = util.CreateLabelPair("env", env)
+		log.Print("Using environment label " + env)
 	}
 
-	log.Print("Starting promproxy")
 	http.HandleFunc("/", reqHandler)
 	log.Fatal(http.ListenAndServe(":9999", nil))
 }
