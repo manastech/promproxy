@@ -12,6 +12,7 @@ import (
 )
 
 var envLabel *dto.LabelPair
+var accessToken string
 
 func main() {
 	log.Print("Starting promproxy")
@@ -19,6 +20,11 @@ func main() {
 	if env, ok := os.LookupEnv("PROMPROXY_ENV_LABEL"); ok {
 		envLabel = util.CreateLabelPair("env", env)
 		log.Print("Using environment label " + env)
+	}
+
+	if token, ok := os.LookupEnv("PROMPROXY_ACCESS_TOKEN"); ok {
+		accessToken = "Bearer " + token
+		log.Print("Expecting access token " + token)
 	}
 
 	http.HandleFunc("/", reqHandler)
@@ -35,6 +41,11 @@ func reqHandler(w http.ResponseWriter, inReq *http.Request) {
 	}
 
 	log.Print(inReq.URL)
+
+	if accessToken != "" && inReq.Header["Authorization"][0] != accessToken {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	results, err := request.resolver.Resolve(inReq.Context(), request.host)
 	if err != nil || len(results) == 0 {
