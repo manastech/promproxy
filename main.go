@@ -27,8 +27,16 @@ func main() {
 		log.Print("Expecting access token " + token)
 	}
 
+	var port string
+	if configPort, ok := os.LookupEnv("PROMPROXY_PORT"); ok {
+		port = ":" + configPort
+	} else {
+		port = ":9999"
+	}
+	log.Print("Listening on port ", port)
+
 	http.HandleFunc("/", reqHandler)
-	log.Fatal(http.ListenAndServe(":9999", nil))
+	log.Fatal(http.ListenAndServe(port, nil))
 }
 
 func reqHandler(w http.ResponseWriter, inReq *http.Request) {
