@@ -3,12 +3,15 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"promproxy/util"
+	"strconv"
 
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
+	"golang.org/x/net/netutil"
 )
 
 var envLabel *dto.LabelPair
@@ -33,10 +36,32 @@ func main() {
 	} else {
 		port = ":9999"
 	}
-	log.Print("Listening on port ", port)
+
+	var maxConnections int
+	if configMaxConn, ok := os.LookupEnv("PROMPROXY_MAX_CONN"); ok {
+		var err error
+		maxConnections, err = strconv.Atoi(configMaxConn)
+		if err != nil {
+			log.Fatalf("Invalid max connections parameter: %v", err)
+		}
+	} else {
+		maxConnections = 10
+	}
+	log.Printf("Listening on port %s, max simulaneous connections %v", port, maxConnections)
 
 	http.HandleFunc("/", reqHandler)
-	log.Fatal(http.ListenAndServe(port, nil))
+
+	l, err := net.Listen("tcp", port)
+
+	if err != nil {
+		log.Fatalf("Cannot start listening socket: %v", err)
+	}
+
+	defer l.Close()
+
+	l = netutil.LimitListener(l, maxConnections)
+
+	log.Fatal(http.Serve(l, nil))
 }
 
 func reqHandler(w http.ResponseWriter, inReq *http.Request) {
