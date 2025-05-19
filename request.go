@@ -68,6 +68,9 @@ func parseRequest(ctx context.Context, url *url.URL) (*request, error) {
 	} else {
 		// var r resolver.Resolver
 		switch url.Query().Get("lookup") {
+    case "localhost":
+      request.resolver = resolver.NewLocalhostResolver()
+
 		case "dns":
 			request.resolver = resolver.NewDNSResolver()
 
